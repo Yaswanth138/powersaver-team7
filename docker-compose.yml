@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  powersaver-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: powersaver-team7
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    volumes:
+      - ./backend/powersaver.sqlite3:/app/backend/powersaver.sqlite3
+    restart: unless-stopped
