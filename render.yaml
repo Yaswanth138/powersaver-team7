@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: powersaver-team7
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
