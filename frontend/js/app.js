@@ -1,4 +1,4 @@
-// PowerSaver Main Controller - Supporting Dribbble "Dashcom" Layout
+// PowerSaver Main Controller - Supporting Dribbble Layout & Creative UX Animations
 
 import { API } from './api.js';
 import { ChartManager } from './charts.js';
@@ -16,9 +16,33 @@ const state = {
     activeTab: 'dashboard'
 };
 
+// --- Easing Helper for Smooth Rolling Numbers ---
+function animateNumber(element, start, end, duration = 800, formatFn = (n) => n.toString()) {
+    if (!element) return;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease Out Cubic
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const current = start + (end - start) * ease;
+        element.textContent = formatFn(current);
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            element.textContent = formatFn(end);
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
+    initWorkflowStepper();
     initModals();
     initForms();
     await loadProperties();
@@ -27,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// --- Tab Management ---
+// --- Tab Management with Creative Transition ---
 function initTabs() {
     const tabs = document.querySelectorAll('[data-tab-target]');
     tabs.forEach(tab => {
@@ -39,10 +63,39 @@ function initTabs() {
     });
 }
 
+// --- Interactive UX Guided Stepper ---
+function initWorkflowStepper() {
+    document.querySelectorAll('[data-stepper-target]').forEach(step => {
+        step.addEventListener('click', () => {
+            const targetTab = step.getAttribute('data-stepper-target');
+            switchTab(targetTab);
+        });
+    });
+}
+
+function updateStepperActiveState(tabId) {
+    document.querySelectorAll('[data-stepper-target]').forEach(step => {
+        const isMatch = step.getAttribute('data-stepper-target') === tabId;
+        step.classList.toggle('border-blue-500', isMatch);
+        step.classList.toggle('bg-blue-50/70', isMatch);
+        step.classList.toggle('text-blue-700', isMatch);
+        step.classList.toggle('border-slate-200', !isMatch);
+        step.classList.toggle('text-slate-600', !isMatch);
+    });
+}
+
 export function switchTab(tabId) {
     state.activeTab = tabId;
 
-    // Update sidebar navigation pills (Dribbble royal blue pill)
+    // Trigger Energy Flow line burst
+    const flowLine = document.querySelector('.energy-telemetry-bar');
+    if (flowLine) {
+        flowLine.style.animation = 'none';
+        flowLine.offsetHeight; // trigger reflow
+        flowLine.style.animation = 'energyFlow 2.4s linear infinite';
+    }
+
+    // Update sidebar navigation pills
     document.querySelectorAll('[data-tab-target]').forEach(btn => {
         const isTarget = btn.getAttribute('data-tab-target') === tabId;
         btn.classList.toggle('nav-item-active', isTarget);
@@ -50,10 +103,14 @@ export function switchTab(tabId) {
         btn.classList.toggle('hover:bg-slate-50', !isTarget);
     });
 
-    // Update views
+    // Update active tab content with smooth slide-fade
     document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.toggle('active', content.id === `tab-${tabId}`);
+        const isTarget = content.id === `tab-${tabId}`;
+        content.classList.toggle('active', isTarget);
     });
+
+    // Update Guided Stepper
+    updateStepperActiveState(tabId);
 
     if (tabId === 'dashboard') loadDashboard();
     if (tabId === 'readings') loadReadingsTab();
@@ -63,9 +120,8 @@ export function switchTab(tabId) {
 
     setTimeout(() => {
         if (window.lucide) window.lucide.createIcons();
-    }, 50);
+    }, 60);
 }
-
 
 // --- Data Loaders ---
 async function loadProperties() {
@@ -112,7 +168,7 @@ async function onPropertySelected(propertyId) {
     }
 }
 
-// --- Dashboard View ---
+// --- Dashboard View with Rolling Numbers ---
 async function loadDashboard() {
     if (!state.currentProperty || !state.currentMeter) return;
 
@@ -129,22 +185,30 @@ async function loadDashboard() {
         state.alerts = alerts || [];
         state.readings = trends.daily || [];
 
-        // 1. KPI Cards (Matching Dribbble Arrow Cards)
+        // 1. KPI Cards with Smooth Rolling Numbers Animation
         const billEl = document.getElementById('kpi-est-bill');
-        if (billEl) billEl.textContent = `₹${Math.round(forecast.projected_bill_expected_inr).toLocaleString()}`;
+        if (billEl) {
+            const targetBill = Math.round(forecast.projected_bill_expected_inr);
+            animateNumber(billEl, 0, targetBill, 900, (n) => `₹${Math.round(n).toLocaleString()}`);
+        }
 
         const unitsEl = document.getElementById('kpi-units-val');
-        if (unitsEl) unitsEl.textContent = `${forecast.mtd_actual_kwh.toFixed(1)} kWh`;
+        if (unitsEl) {
+            const targetUnits = forecast.mtd_actual_kwh;
+            animateNumber(unitsEl, 0, targetUnits, 800, (n) => `${n.toFixed(1)} kWh`);
+        }
 
         const spikesEl = document.getElementById('kpi-spikes-val');
-        if (spikesEl) spikesEl.textContent = `${state.anomalies.length} Spikes`;
+        if (spikesEl) {
+            spikesEl.textContent = `${state.anomalies.length} Spikes`;
+        }
 
         // Percentages & trends
         const wow = comparison.week_over_week;
         const wowPctEl = document.getElementById('kpi-wow-pct');
         if (wowPctEl && wow) {
             wowPctEl.textContent = `${wow.trend === 'UP' ? '+' : ''}${wow.percentage_change}%`;
-            wowPctEl.className = `text-[11px] font-bold px-1.5 py-0.5 rounded-md ${wow.trend === 'UP' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`;
+            wowPctEl.className = `text-[11px] font-bold px-2 py-0.5 rounded-md ${wow.trend === 'UP' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`;
         }
 
         // 2. Render Dribbble Dual-Line Hero Chart
@@ -167,7 +231,6 @@ async function loadDashboard() {
     } catch (err) {
         console.error('Error loading dashboard:', err);
     }
-
 }
 
 function renderHighLoadAppliances(appliancesList) {
@@ -194,10 +257,10 @@ function renderHighLoadAppliances(appliancesList) {
     topApps.forEach(app => {
         const meta = icons[app.category] || icons.general;
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0';
+        row.className = 'flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 px-1 rounded-xl transition-colors';
         row.innerHTML = `
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center">
+                <div class="w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center shrink-0">
                     <i data-lucide="${meta.icon}" class="w-4 h-4"></i>
                 </div>
                 <div>
@@ -215,7 +278,6 @@ function renderHighLoadAppliances(appliancesList) {
 
     if (window.lucide) window.lucide.createIcons();
 }
-
 
 function renderReferrerStyleTable(recentReadings, anomalies) {
     const tbody = document.getElementById('dash-table-body');
@@ -235,12 +297,12 @@ function renderReferrerStyleTable(recentReadings, anomalies) {
                 +${r.daily_consumption_kwh.toFixed(2)} kWh
             </td>
             <td class="py-3 px-3">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isSpike ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}">
+                <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isSpike ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}">
                     ${isSpike ? '⚠️ Spike Alert' : '✓ Normal'}
                 </span>
             </td>
             <td class="py-3 px-3 text-right">
-                <button class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded-md">Details ▾</button>
+                <button class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg transition-colors">Details ▾</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -268,7 +330,7 @@ async function loadReadingsTab() {
 
         [...readings].reverse().forEach(r => {
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 text-xs';
+            tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 text-xs transition-colors';
             tr.innerHTML = `
                 <td class="py-3 px-4 font-mono font-semibold text-slate-700">${r.reading_date}</td>
                 <td class="py-3 px-4 font-mono font-bold text-blue-600">${r.cumulative_kwh.toFixed(1)} kWh</td>
@@ -291,7 +353,7 @@ async function loadReadingsTab() {
     }
 }
 
-// --- Tariffs Tab ---
+// --- Tariffs Tab with Animated Slab Milestone Alerts ---
 async function loadTariffTab() {
     if (!state.currentProperty) return;
     try {
@@ -315,7 +377,7 @@ function renderSlabsList(slabs) {
 
     slabs.forEach(s => {
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-mono';
+        item.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-mono transition-transform hover:scale-[1.01]';
         const label = s.max_units ? `Slab ${s.min_units} - ${s.max_units} units` : `Slab ${s.min_units}+ units`;
         item.innerHTML = `
             <span class="font-semibold text-slate-700">${label}</span>
@@ -333,6 +395,24 @@ async function simulateTariffBill(units) {
         document.getElementById('sim-duty-tax').textContent = `₹${calc.electricity_duty_tax.toFixed(2)}`;
         document.getElementById('sim-total-bill').textContent = `₹${calc.total_estimated_bill.toFixed(2)}`;
 
+        // Dynamic Slab Milestone Warning Pill
+        const milestonePill = document.getElementById('slab-milestone-pill');
+        if (milestonePill) {
+            if (units <= 100) {
+                milestonePill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 transition-all';
+                milestonePill.textContent = '✓ Slab 1 Active (Base Rate: ₹3.50/unit)';
+            } else if (units <= 200) {
+                milestonePill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 transition-all';
+                milestonePill.textContent = '⚡ Slab 2 Active (Tier Rate: ₹5.50/unit)';
+            } else if (units <= 400) {
+                milestonePill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 transition-all';
+                milestonePill.textContent = '⚠️ Slab 3 Crossed! (Surge Rate: ₹7.50/unit)';
+            } else {
+                milestonePill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 animate-alert-pulse transition-all';
+                milestonePill.textContent = '🚨 Heavy Slab 4 Penalty Active! (₹9.00/unit)';
+            }
+        }
+
         const breakdownContainer = document.getElementById('sim-slab-breakdown');
         if (breakdownContainer) {
             breakdownContainer.innerHTML = '';
@@ -340,7 +420,7 @@ async function simulateTariffBill(units) {
                 const row = document.createElement('div');
                 row.className = 'flex items-center justify-between text-xs py-1.5 border-b border-slate-50';
                 row.innerHTML = `
-                    <span class="text-slate-600">Slab ${b.slab_label} (${b.units_in_slab} units @ ₹${b.rate_per_unit}):</span>
+                    <span class="text-slate-600 font-medium">Slab ${b.slab_label} (${b.units_in_slab} units @ ₹${b.rate_per_unit}):</span>
                     <span class="font-mono font-bold text-slate-800">₹${b.amount.toFixed(2)}</span>
                 `;
                 breakdownContainer.appendChild(row);
@@ -371,19 +451,19 @@ async function loadAppliancesTab() {
             table.innerHTML = '';
             appSummary.appliances.forEach(app => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 text-xs';
+                tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 text-xs transition-colors';
                 tr.innerHTML = `
                     <td class="py-3 px-4 font-semibold text-slate-800">${app.name}</td>
                     <td class="py-3 px-4 font-mono text-slate-600">${app.rated_wattage}W</td>
                     <td class="py-3 px-4 text-slate-600">${app.daily_hours_used} hrs</td>
                     <td class="py-3 px-4 font-mono font-bold text-blue-600">${app.estimated_monthly_kwh} kWh</td>
                     <td class="py-3 px-4 text-right">
-                        <button data-delete-app="${app.id}" class="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                        <button data-delete-app="${app.id}" class="text-xs text-rose-500 hover:text-rose-700 font-semibold transition-colors">Remove</button>
                     </td>
                 `;
                 tr.querySelector(`[data-delete-app="${app.id}"]`).addEventListener('click', async () => {
                     await API.deleteAppliance(app.id);
-                    showToast('Appliance removed', 'success');
+                    showToast('Appliance removed from inventory', 'success');
                     loadAppliancesTab();
                 });
                 table.appendChild(tr);
@@ -424,10 +504,10 @@ async function loadForecastTab() {
             if (forecast.influential_spikes && forecast.influential_spikes.length > 0) {
                 forecast.influential_spikes.forEach(sp => {
                     const tr = document.createElement('tr');
-                    tr.className = 'border-b border-slate-50 text-xs';
+                    tr.className = 'border-b border-slate-50 text-xs transition-colors hover:bg-slate-50/50';
                     tr.innerHTML = `
                         <td class="py-2.5 px-3 font-mono font-semibold text-slate-700">${sp.date}</td>
-                        <td class="py-2.5 px-3 font-mono text-red-600 font-bold">${sp.spike_kwh} kWh</td>
+                        <td class="py-2.5 px-3 font-mono text-rose-600 font-bold">${sp.spike_kwh} kWh</td>
                         <td class="py-2.5 px-3 font-mono text-slate-500">${sp.baseline_kwh} kWh</td>
                         <td class="py-2.5 px-3 font-bold text-amber-700">${sp.estimated_bill_impact}</td>
                     `;
@@ -443,9 +523,11 @@ async function loadForecastTab() {
             recContainer.innerHTML = '';
             recommendations.forEach(r => {
                 const card = document.createElement('div');
-                card.className = 'p-4 rounded-2xl border border-blue-100 bg-blue-50/50 flex items-start gap-3.5';
+                card.className = 'p-4 rounded-2xl border border-blue-100 bg-blue-50/50 flex items-start gap-3.5 hover-lift transition-all';
                 card.innerHTML = `
-                    <div class="p-2 bg-blue-600 text-white rounded-xl text-sm mt-0.5 shadow-sm">💡</div>
+                    <div class="p-2.5 bg-blue-600 text-white rounded-xl text-sm mt-0.5 shadow-sm">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-white"></i>
+                    </div>
                     <div>
                         <div class="flex items-center gap-2">
                             <h4 class="text-xs font-bold text-slate-800">${r.title}</h4>
@@ -456,6 +538,7 @@ async function loadForecastTab() {
                 `;
                 recContainer.appendChild(card);
             });
+            if (window.lucide) window.lucide.createIcons();
         }
     } catch (err) {
         console.error(err);
@@ -480,7 +563,7 @@ function initForms() {
                     cumulative_kwh: cum,
                     notes: notes || null
                 });
-                showToast('Meter reading logged successfully!', 'success');
+                showToast('Meter reading recorded successfully!', 'success');
                 readingForm.reset();
                 document.getElementById('input-reading-date').value = new Date().toISOString().split('T')[0];
                 closeModal('modal-log-reading');
@@ -524,7 +607,7 @@ function initForms() {
                     quantity: qty,
                     category
                 });
-                showToast(`Added ${name}!`, 'success');
+                showToast(`Added ${name} to inventory!`, 'success');
                 appForm.reset();
                 closeModal('modal-add-appliance');
                 loadAppliancesTab();
