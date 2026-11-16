@@ -1,4 +1,4 @@
-// PowerSaver Main Controller
+// PowerSaver Main Controller - Supporting Dribbble "Dashcom" Layout
 
 import { API } from './api.js';
 import { ChartManager } from './charts.js';
@@ -16,7 +16,6 @@ const state = {
     activeTab: 'dashboard'
 };
 
-// --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initModals();
@@ -39,21 +38,19 @@ function initTabs() {
 export function switchTab(tabId) {
     state.activeTab = tabId;
 
-    // Update buttons
+    // Update sidebar navigation pills (Dribbble royal blue pill)
     document.querySelectorAll('[data-tab-target]').forEach(btn => {
         const isTarget = btn.getAttribute('data-tab-target') === tabId;
-        btn.classList.toggle('bg-blue-50', isTarget);
-        btn.classList.toggle('text-blue-600', isTarget);
-        btn.classList.toggle('font-semibold', isTarget);
+        btn.classList.toggle('nav-item-active', isTarget);
         btn.classList.toggle('text-slate-600', !isTarget);
+        btn.classList.toggle('hover:bg-slate-50', !isTarget);
     });
 
-    // Update contents
+    // Update views
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.toggle('active', content.id === `tab-${tabId}`);
     });
 
-    // Refresh tab specific data if needed
     if (tabId === 'dashboard') loadDashboard();
     if (tabId === 'readings') loadReadingsTab();
     if (tabId === 'tariffs') loadTariffTab();
@@ -66,31 +63,31 @@ async function loadProperties() {
     try {
         state.properties = await API.getProperties();
         const selector = document.getElementById('property-selector');
-        selector.innerHTML = '';
-
-        if (state.properties.length === 0) {
-            // Create default
-            const def = await API.createProperty({ name: 'My Home', property_type: 'residential', sanctioned_load_kw: 3.0 });
-            state.properties = [def];
-        }
-
-        state.properties.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = `${p.name} (${p.property_type.toUpperCase()} • ${p.sanctioned_load_kw} kW)`;
-            selector.appendChild(opt);
-        });
-
-        state.currentProperty = state.properties[0];
-        await onPropertySelected(state.currentProperty.id);
-
-        selector.addEventListener('change', async (e) => {
-            const p = state.properties.find(item => item.id === e.target.value);
-            if (p) {
-                state.currentProperty = p;
-                await onPropertySelected(p.id);
+        if (selector) {
+            selector.innerHTML = '';
+            if (state.properties.length === 0) {
+                const def = await API.createProperty({ name: 'My Home', property_type: 'residential', sanctioned_load_kw: 3.0 });
+                state.properties = [def];
             }
-        });
+
+            state.properties.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.name} (${p.property_type.toUpperCase()} • ${p.sanctioned_load_kw} kW)`;
+                selector.appendChild(opt);
+            });
+
+            state.currentProperty = state.properties[0];
+            await onPropertySelected(state.currentProperty.id);
+
+            selector.addEventListener('change', async (e) => {
+                const p = state.properties.find(item => item.id === e.target.value);
+                if (p) {
+                    state.currentProperty = p;
+                    await onPropertySelected(p.id);
+                }
+            });
+        }
     } catch (err) {
         showToast('Error loading properties: ' + (err.detail || err.message), 'error');
     }
@@ -100,8 +97,6 @@ async function onPropertySelected(propertyId) {
     try {
         state.meters = await API.getMeters(propertyId);
         state.currentMeter = state.meters[0] || null;
-
-        // Refresh all views
         await loadDashboard();
     } catch (err) {
         console.error(err);
@@ -113,139 +108,128 @@ async function loadDashboard() {
     if (!state.currentProperty || !state.currentMeter) return;
 
     try {
-        const [trends, comparison, forecast, alerts] = await Promise.all([
+        const [trends, comparison, forecast, alerts, appliances] = await Promise.all([
             API.getTrends(state.currentMeter.id),
             API.getHistoricalComparison(state.currentMeter.id),
             API.getForecast(state.currentProperty.id, state.currentMeter.id),
-            API.getAlerts(state.currentProperty.id)
+            API.getAlerts(state.currentProperty.id),
+            API.getAppliances(state.currentProperty.id)
         ]);
 
         state.anomalies = forecast.anomalies || [];
         state.alerts = alerts || [];
+        state.readings = trends.daily || [];
 
-        // 1. KPI Cards
-        document.getElementById('kpi-mtd-units').textContent = `${forecast.mtd_actual_kwh} kWh`;
-        document.getElementById('kpi-proj-bill').textContent = `₹${Math.round(forecast.projected_bill_expected_inr).toLocaleString()}`;
-        document.getElementById('kpi-bill-range').textContent = `Range: ₹${Math.round(forecast.projected_bill_optimistic_inr).toLocaleString()} – ₹${Math.round(forecast.projected_bill_pessimistic_inr).toLocaleString()}`;
-        document.getElementById('kpi-active-alerts').textContent = state.alerts.length + state.anomalies.length;
+        // 1. KPI Cards (Matching Dribbble Arrow Cards)
+        const billEl = document.getElementById('kpi-est-bill');
+        if (billEl) billEl.textContent = `₹${Math.round(forecast.projected_bill_expected_inr).toLocaleString()}`;
 
-        // 2. Trend comparison badge
+        const unitsEl = document.getElementById('kpi-units-val');
+        if (unitsEl) unitsEl.textContent = `${forecast.mtd_actual_kwh.toFixed(1)} kWh`;
+
+        const spikesEl = document.getElementById('kpi-spikes-val');
+        if (spikesEl) spikesEl.textContent = `${state.anomalies.length} Spikes`;
+
+        // Percentages & trends
         const wow = comparison.week_over_week;
-        const trendEl = document.getElementById('kpi-trend-badge');
-        if (wow && wow.prior_7_days_kwh > 0) {
-            const isUp = wow.trend === 'UP';
-            trendEl.className = `inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${isUp ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`;
-            trendEl.innerHTML = `${isUp ? '↑' : '↓'} ${Math.abs(wow.percentage_change)}% vs last week`;
-        } else {
-            trendEl.className = 'hidden';
+        const wowPctEl = document.getElementById('kpi-wow-pct');
+        if (wowPctEl && wow) {
+            wowPctEl.textContent = `${wow.trend === 'UP' ? '+' : ''}${wow.percentage_change}%`;
+            wowPctEl.className = `text-[11px] font-bold px-1.5 py-0.5 rounded-md ${wow.trend === 'UP' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`;
         }
 
-        // 3. Render Daily Chart with Anomaly Highlights
-        ChartManager.renderDailyChart('chart-daily-consumption', trends.daily, state.anomalies);
+        // 2. Render Dribbble Dual-Line Hero Chart
+        ChartManager.renderHeroChart('chart-hero-consumption', trends.daily, state.anomalies);
 
-        // 4. Render Active Alerts Feed
-        renderAlertsList();
+        // 3. Render Slab Target Radial Gauge (88% style in Dribbble)
+        ChartManager.renderSlabTargetGauge('chart-slab-gauge', forecast.mtd_actual_kwh, 400);
 
-        // 5. Render Historical Comparisons
-        renderComparisonSection(comparison);
+        // 4. Update Dark Weekly Capsules (Mon - Sun)
+        ChartManager.updateWeeklyCapsules(trends.daily);
+
+        // 5. Render Recent Customer Style List (High Load Appliances)
+        renderHighLoadAppliances(appliances.appliances);
+
+        // 6. Render Bottom Table (Referrer History Style)
+        renderReferrerStyleTable(trends.daily.slice(-6).reverse(), state.anomalies);
 
     } catch (err) {
         console.error('Error loading dashboard:', err);
     }
 }
 
-function renderAlertsList() {
-    const list = document.getElementById('dashboard-alerts-list');
-    list.innerHTML = '';
+function renderHighLoadAppliances(appliancesList) {
+    const container = document.getElementById('high-load-appliances-list');
+    if (!container) return;
 
-    const allAlerts = [];
+    container.innerHTML = '';
+    const topApps = [...(appliancesList || [])].sort((a, b) => b.estimated_monthly_kwh - a.estimated_monthly_kwh).slice(0, 4);
 
-    // System alerts from DB
-    state.alerts.forEach(a => {
-        allAlerts.push({
-            id: a.id,
-            type: a.alert_type,
-            severity: a.severity,
-            message: a.message,
-            date: a.reading_date,
-            canResolve: true
-        });
-    });
-
-    // Time-series anomalies
-    state.anomalies.forEach(a => {
-        allAlerts.push({
-            id: null,
-            type: 'anomaly_spike',
-            severity: a.severity,
-            message: a.reason,
-            date: a.reading_date,
-            canResolve: false
-        });
-    });
-
-    if (allAlerts.length === 0) {
-        list.innerHTML = `
-            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-3">
-                <span class="text-emerald-600 text-lg">✓</span>
-                <p class="text-sm text-emerald-800 font-medium">All clear! No unusual consumption spikes or missing readings detected.</p>
-            </div>
-        `;
+    if (topApps.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">No appliances registered yet.</p>`;
         return;
     }
 
-    allAlerts.forEach(alert => {
-        const isHigh = alert.severity === 'HIGH';
-        const item = document.createElement('div');
-        item.className = `p-3.5 rounded-xl border flex items-start justify-between gap-3 ${isHigh ? 'bg-red-50/80 border-red-200' : 'bg-amber-50/80 border-amber-200'}`;
-        item.innerHTML = `
-            <div class="flex items-start gap-2.5">
-                <span class="text-base mt-0.5">${isHigh ? '🚨' : '⚠️'}</span>
+    const icons = {
+        cooling: { emoji: '❄️', bg: 'bg-blue-100' },
+        heating: { emoji: '♨️', bg: 'bg-rose-100' },
+        refrigeration: { emoji: '🧊', bg: 'bg-emerald-100' },
+        ventilation: { emoji: '🌀', bg: 'bg-amber-100' },
+        lighting: { emoji: '💡', bg: 'bg-purple-100' },
+        general: { emoji: '⚡', bg: 'bg-slate-100' }
+    };
+
+    topApps.forEach(app => {
+        const meta = icons[app.category] || icons.general;
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0';
+        row.innerHTML = `
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center text-sm">
+                    ${meta.emoji}
+                </div>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold uppercase tracking-wider ${isHigh ? 'text-red-700' : 'text-amber-700'}">${alert.severity} ALERT</span>
-                        ${alert.date ? `<span class="text-xs text-slate-500">• ${alert.date}</span>` : ''}
-                    </div>
-                    <p class="text-xs text-slate-700 mt-0.5 leading-relaxed">${alert.message}</p>
+                    <h5 class="text-xs font-bold text-slate-800 truncate max-w-[110px]">${app.name}</h5>
+                    <span class="text-[10px] text-slate-400 font-mono">${app.rated_wattage}W • ${app.daily_hours_used}h/day</span>
                 </div>
             </div>
-            ${alert.canResolve ? `
-                <button data-resolve-id="${alert.id}" class="text-xs font-medium text-slate-500 hover:text-slate-800 px-2 py-1 bg-white rounded border border-slate-200 shadow-xs">Dismiss</button>
-            ` : ''}
+            <div class="text-right">
+                <span class="text-xs font-bold text-slate-900 font-mono">${app.estimated_monthly_kwh}</span>
+                <span class="text-[10px] text-slate-400 block">kWh/mo</span>
+            </div>
         `;
-
-        if (alert.canResolve) {
-            item.querySelector(`[data-resolve-id="${alert.id}"]`).addEventListener('click', async () => {
-                await API.resolveAlert(alert.id);
-                showToast('Alert resolved', 'success');
-                loadDashboard();
-            });
-        }
-
-        list.appendChild(item);
+        container.appendChild(row);
     });
 }
 
-function renderComparisonSection(comparison) {
-    const mom = comparison.month_over_month;
-    const wow = comparison.week_over_week;
+function renderReferrerStyleTable(recentReadings, anomalies) {
+    const tbody = document.getElementById('dash-table-body');
+    if (!tbody) return;
 
-    const momEl = document.getElementById('comp-mom-text');
-    if (momEl) {
-        if (mom.previous_month) {
-            momEl.textContent = `${mom.trend === 'UP' ? '+' : ''}${mom.percentage_change}% (${mom.difference_kwh} kWh)`;
-            momEl.className = `text-sm font-bold ${mom.trend === 'UP' ? 'text-red-600' : 'text-emerald-600'}`;
-        } else {
-            momEl.textContent = 'Awaiting 2nd month of baseline data';
-            momEl.className = 'text-xs text-slate-500 italic';
-        }
-    }
+    tbody.innerHTML = '';
+    const anomalySet = new Set(anomalies.map(a => a.reading_date));
 
-    const wowEl = document.getElementById('comp-wow-text');
-    if (wowEl) {
-        wowEl.textContent = `${wow.trend === 'UP' ? '+' : ''}${wow.percentage_change}% (${wow.difference_kwh} kWh)`;
-        wowEl.className = `text-sm font-bold ${wow.trend === 'UP' ? 'text-red-600' : 'text-emerald-600'}`;
-    }
+    recentReadings.forEach(r => {
+        const isSpike = anomalySet.has(r.reading_date);
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 transition-colors text-xs';
+        tr.innerHTML = `
+            <td class="py-3 px-3 font-semibold text-slate-700 font-mono">${r.reading_date}</td>
+            <td class="py-3 px-3 font-mono text-slate-800">${r.cumulative_kwh.toFixed(1)} kWh</td>
+            <td class="py-3 px-3 font-mono font-bold ${isSpike ? 'text-red-600' : 'text-blue-600'}">
+                +${r.daily_consumption_kwh.toFixed(2)} kWh
+            </td>
+            <td class="py-3 px-3">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isSpike ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}">
+                    ${isSpike ? '⚠️ Spike Alert' : '✓ Normal'}
+                </span>
+            </td>
+            <td class="py-3 px-3 text-right">
+                <button class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded-md">Details ▾</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 // --- Readings Tab ---
@@ -256,42 +240,37 @@ async function loadReadingsTab() {
         state.readings = readings;
 
         const tableBody = document.getElementById('readings-table-body');
+        if (!tableBody) return;
         tableBody.innerHTML = '';
 
-        // Configure CSV export button
         const exportBtn = document.getElementById('btn-export-csv');
-        exportBtn.href = API.getExportUrl(state.currentMeter.id);
+        if (exportBtn) exportBtn.href = API.getExportUrl(state.currentMeter.id);
 
         if (readings.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No readings logged yet. Record your first meter reading above!</td></tr>`;
             return;
         }
 
-        // Display in reverse chronological order
         [...readings].reverse().forEach(r => {
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-slate-100 hover:bg-slate-50/80 transition-colors';
+            tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 text-xs';
             tr.innerHTML = `
-                <td class="py-3 px-4 font-mono text-xs font-semibold text-slate-700">${r.reading_date}</td>
-                <td class="py-3 px-4 font-mono text-sm font-bold text-blue-600">${r.cumulative_kwh.toFixed(1)} kWh</td>
-                <td class="py-3 px-4 font-mono text-xs font-medium text-slate-800">${r.daily_consumption_kwh > 0 ? `+${r.daily_consumption_kwh.toFixed(2)}` : 'Baseline'}</td>
-                <td class="py-3 px-4 text-xs text-slate-500">${r.days_elapsed} day(s)</td>
-                <td class="py-3 px-4 text-xs text-slate-500 truncate max-w-xs">${r.notes || '—'}</td>
+                <td class="py-3 px-4 font-mono font-semibold text-slate-700">${r.reading_date}</td>
+                <td class="py-3 px-4 font-mono font-bold text-blue-600">${r.cumulative_kwh.toFixed(1)} kWh</td>
+                <td class="py-3 px-4 font-mono font-medium text-slate-800">${r.daily_consumption_kwh > 0 ? `+${r.daily_consumption_kwh.toFixed(2)}` : 'Baseline'}</td>
+                <td class="py-3 px-4 text-slate-500">${r.days_elapsed} day(s)</td>
+                <td class="py-3 px-4 text-slate-500 truncate max-w-xs">${r.notes || '—'}</td>
             `;
             tableBody.appendChild(tr);
         });
 
-        // Set min validation on reading entry form
         const latest = readings[readings.length - 1];
         const inputCum = document.getElementById('input-cum-kwh');
         const helperText = document.getElementById('reading-helper-text');
-        if (latest) {
+        if (latest && inputCum && helperText) {
             inputCum.min = latest.cumulative_kwh;
-            helperText.textContent = `Previous recorded reading: ${latest.cumulative_kwh} kWh on ${latest.reading_date}. Entry must be ≥ ${latest.cumulative_kwh}.`;
-        } else {
-            helperText.textContent = `This will be your initial baseline reading.`;
+            helperText.textContent = `Previous reading: ${latest.cumulative_kwh} kWh on ${latest.reading_date}. Entry must be ≥ ${latest.cumulative_kwh}.`;
         }
-
     } catch (err) {
         showToast('Error loading readings', 'error');
     }
@@ -303,17 +282,12 @@ async function loadTariffTab() {
     try {
         state.tariff = await API.getTariff(state.currentProperty.id);
 
-        // Pre-fill tariff config form
         document.getElementById('tariff-discom-name').value = state.tariff.discom_name;
         document.getElementById('tariff-fixed-charge').value = state.tariff.fixed_charge_per_kw;
         document.getElementById('tariff-tax-pct').value = state.tariff.tax_percentage;
 
-        // Render Slabs list
         renderSlabsList(state.tariff.slabs);
-
-        // Run live calculation simulator for default 280 units
         await simulateTariffBill(280);
-
     } catch (err) {
         console.error(err);
     }
@@ -321,11 +295,12 @@ async function loadTariffTab() {
 
 function renderSlabsList(slabs) {
     const container = document.getElementById('slabs-list-container');
+    if (!container) return;
     container.innerHTML = '';
 
     slabs.forEach(s => {
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs font-mono';
+        item.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-mono';
         const label = s.max_units ? `Slab ${s.min_units} - ${s.max_units} units` : `Slab ${s.min_units}+ units`;
         item.innerHTML = `
             <span class="font-semibold text-slate-700">${label}</span>
@@ -343,19 +318,19 @@ async function simulateTariffBill(units) {
         document.getElementById('sim-duty-tax').textContent = `₹${calc.electricity_duty_tax.toFixed(2)}`;
         document.getElementById('sim-total-bill').textContent = `₹${calc.total_estimated_bill.toFixed(2)}`;
 
-        // Breakdown bars
         const breakdownContainer = document.getElementById('sim-slab-breakdown');
-        breakdownContainer.innerHTML = '';
-        calc.slab_breakdown.forEach(b => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between text-xs py-1 border-b border-slate-100';
-            row.innerHTML = `
-                <span class="text-slate-600">Slab ${b.slab_label} (${b.units_in_slab} units @ ₹${b.rate_per_unit}):</span>
-                <span class="font-mono font-bold text-slate-800">₹${b.amount.toFixed(2)}</span>
-            `;
-            breakdownContainer.appendChild(row);
-        });
-
+        if (breakdownContainer) {
+            breakdownContainer.innerHTML = '';
+            calc.slab_breakdown.forEach(b => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between text-xs py-1.5 border-b border-slate-50';
+                row.innerHTML = `
+                    <span class="text-slate-600">Slab ${b.slab_label} (${b.units_in_slab} units @ ₹${b.rate_per_unit}):</span>
+                    <span class="font-mono font-bold text-slate-800">₹${b.amount.toFixed(2)}</span>
+                `;
+                breakdownContainer.appendChild(row);
+            });
+        }
     } catch (err) {
         console.error(err);
     }
@@ -371,38 +346,35 @@ async function loadAppliancesTab() {
         ]);
 
         state.appliances = appSummary;
-
-        // Render Donut Chart
         ChartManager.renderApplianceDonut('chart-appliance-donut', appSummary.category_breakdown);
 
-        // Totals
         document.getElementById('app-total-daily').textContent = `${appSummary.total_estimated_daily_kwh} kWh/day`;
         document.getElementById('app-total-monthly').textContent = `${appSummary.total_estimated_monthly_kwh} kWh/mo`;
 
-        // Render Appliance Table
         const table = document.getElementById('appliances-table-body');
-        table.innerHTML = '';
-        appSummary.appliances.forEach(app => {
-            const tr = document.createElement('tr');
-            tr.className = 'border-b border-slate-100 hover:bg-slate-50/80';
-            tr.innerHTML = `
-                <td class="py-3 px-4 font-semibold text-slate-800 text-xs">${app.name}</td>
-                <td class="py-3 px-4 text-xs font-mono text-slate-600">${app.rated_wattage}W</td>
-                <td class="py-3 px-4 text-xs text-slate-600">${app.daily_hours_used} hrs</td>
-                <td class="py-3 px-4 text-xs font-mono font-bold text-blue-600">${app.estimated_monthly_kwh} kWh</td>
-                <td class="py-3 px-4 text-right">
-                    <button data-delete-app="${app.id}" class="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
-                </td>
-            `;
-            tr.querySelector(`[data-delete-app="${app.id}"]`).addEventListener('click', async () => {
-                await API.deleteAppliance(app.id);
-                showToast('Appliance removed', 'success');
-                loadAppliancesTab();
+        if (table) {
+            table.innerHTML = '';
+            appSummary.appliances.forEach(app => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-50 hover:bg-slate-50/60 text-xs';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-800">${app.name}</td>
+                    <td class="py-3 px-4 font-mono text-slate-600">${app.rated_wattage}W</td>
+                    <td class="py-3 px-4 text-slate-600">${app.daily_hours_used} hrs</td>
+                    <td class="py-3 px-4 font-mono font-bold text-blue-600">${app.estimated_monthly_kwh} kWh</td>
+                    <td class="py-3 px-4 text-right">
+                        <button data-delete-app="${app.id}" class="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                    </td>
+                `;
+                tr.querySelector(`[data-delete-app="${app.id}"]`).addEventListener('click', async () => {
+                    await API.deleteAppliance(app.id);
+                    showToast('Appliance removed', 'success');
+                    loadAppliancesTab();
+                });
+                table.appendChild(tr);
             });
-            table.appendChild(tr);
-        });
+        }
 
-        // Safety & Ethics Reconciliation Card
         document.getElementById('recon-measured-kwh').textContent = `${recon.measured_meter_kwh} kWh`;
         document.getElementById('recon-estimated-kwh').textContent = `${recon.estimated_appliances_kwh} kWh`;
         document.getElementById('recon-diff-kwh').textContent = `${recon.unaccounted_difference_kwh > 0 ? '+' : ''}${recon.unaccounted_difference_kwh} kWh`;
@@ -413,7 +385,7 @@ async function loadAppliancesTab() {
     }
 }
 
-// --- Forecast & Intelligence Tab ---
+// --- Forecast Tab ---
 async function loadForecastTab() {
     if (!state.currentProperty || !state.currentMeter) return;
     try {
@@ -422,7 +394,6 @@ async function loadForecastTab() {
             API.getRecommendations(state.currentProperty.id, state.currentMeter.id)
         ]);
 
-        // Range Cards
         document.getElementById('fore-opt-bill').textContent = `₹${Math.round(forecast.projected_bill_optimistic_inr).toLocaleString()}`;
         document.getElementById('fore-opt-kwh').textContent = `${forecast.projected_total_kwh_optimistic} kWh`;
 
@@ -432,57 +403,55 @@ async function loadForecastTab() {
         document.getElementById('fore-pes-bill').textContent = `₹${Math.round(forecast.projected_bill_pessimistic_inr).toLocaleString()}`;
         document.getElementById('fore-pes-kwh').textContent = `${forecast.projected_total_kwh_pessimistic} kWh`;
 
-        // Influential Readings Table
         const infTable = document.getElementById('influential-spikes-body');
-        infTable.innerHTML = '';
-        if (forecast.influential_spikes && forecast.influential_spikes.length > 0) {
-            forecast.influential_spikes.forEach(sp => {
-                const tr = document.createElement('tr');
-                tr.className = 'border-b border-slate-100 text-xs';
-                tr.innerHTML = `
-                    <td class="py-2.5 px-3 font-mono font-semibold text-slate-700">${sp.date}</td>
-                    <td class="py-2.5 px-3 font-mono text-red-600 font-bold">${sp.spike_kwh} kWh</td>
-                    <td class="py-2.5 px-3 font-mono text-slate-500">${sp.baseline_kwh} kWh</td>
-                    <td class="py-2.5 px-3 font-bold text-amber-700">${sp.estimated_bill_impact}</td>
-                `;
-                infTable.appendChild(tr);
-            });
-        } else {
-            infTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">No abnormal spike readings detected this month. Usage is stable.</td></tr>`;
+        if (infTable) {
+            infTable.innerHTML = '';
+            if (forecast.influential_spikes && forecast.influential_spikes.length > 0) {
+                forecast.influential_spikes.forEach(sp => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-slate-50 text-xs';
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 font-mono font-semibold text-slate-700">${sp.date}</td>
+                        <td class="py-2.5 px-3 font-mono text-red-600 font-bold">${sp.spike_kwh} kWh</td>
+                        <td class="py-2.5 px-3 font-mono text-slate-500">${sp.baseline_kwh} kWh</td>
+                        <td class="py-2.5 px-3 font-bold text-amber-700">${sp.estimated_bill_impact}</td>
+                    `;
+                    infTable.appendChild(tr);
+                });
+            } else {
+                infTable.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">No abnormal spike readings detected this month. Usage is stable.</td></tr>`;
+            }
         }
 
-        // Recommendations List
         const recContainer = document.getElementById('recommendations-container');
-        recContainer.innerHTML = '';
-        recommendations.forEach(r => {
-            const card = document.createElement('div');
-            card.className = 'p-4 rounded-xl border border-blue-100 bg-blue-50/50 flex items-start gap-3.5';
-            card.innerHTML = `
-                <div class="p-2 bg-blue-600 text-white rounded-lg text-sm mt-0.5">💡</div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h4 class="text-sm font-bold text-slate-800">${r.title}</h4>
-                        <span class="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold rounded-full">${r.impact}</span>
+        if (recContainer) {
+            recContainer.innerHTML = '';
+            recommendations.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-2xl border border-blue-100 bg-blue-50/50 flex items-start gap-3.5';
+                card.innerHTML = `
+                    <div class="p-2 bg-blue-600 text-white rounded-xl text-sm mt-0.5 shadow-sm">💡</div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="text-xs font-bold text-slate-800">${r.title}</h4>
+                            <span class="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold rounded-full">${r.impact}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">${r.details}</p>
                     </div>
-                    <p class="text-xs text-slate-600 mt-1 leading-relaxed">${r.details}</p>
-                </div>
-            `;
-            recContainer.appendChild(card);
-        });
-
+                `;
+                recContainer.appendChild(card);
+            });
+        }
     } catch (err) {
         console.error(err);
     }
 }
 
-// --- Forms & Event Handlers ---
+// --- Forms & Modals ---
 function initForms() {
-    // 1. Reading form
     const readingForm = document.getElementById('form-log-reading');
     if (readingForm) {
-        // Default to today
         document.getElementById('input-reading-date').value = new Date().toISOString().split('T')[0];
-
         readingForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const date = document.getElementById('input-reading-date').value;
@@ -508,7 +477,6 @@ function initForms() {
         });
     }
 
-    // 2. Tariff simulator slider
     const simSlider = document.getElementById('sim-units-slider');
     const simInput = document.getElementById('sim-units-input');
     if (simSlider && simInput) {
@@ -522,7 +490,6 @@ function initForms() {
         });
     }
 
-    // 3. Add appliance form
     const appForm = document.getElementById('form-add-appliance');
     if (appForm) {
         appForm.addEventListener('submit', async (e) => {
@@ -552,7 +519,6 @@ function initForms() {
         });
     }
 
-    // 4. Quick Presets for Appliance Form
     document.querySelectorAll('[data-preset-app]').forEach(btn => {
         btn.addEventListener('click', () => {
             const preset = btn.getAttribute('data-preset-app');
@@ -573,7 +539,6 @@ function initForms() {
     });
 }
 
-// --- Modals ---
 function initModals() {
     document.querySelectorAll('[data-open-modal]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -606,12 +571,11 @@ function closeModal(id) {
     }
 }
 
-// --- Toast Notifications ---
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     const isError = type === 'error';
-    toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 ${
-        isError ? 'bg-red-500 text-white border-red-600' : 'bg-slate-900 text-white border-slate-800'
+    toast.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 ${
+        isError ? 'bg-rose-600 text-white border-rose-700' : 'bg-slate-900 text-white border-slate-800'
     }`;
     toast.innerHTML = `<span>${isError ? '✕' : '✓'}</span><span>${message}</span>`;
     document.body.appendChild(toast);
