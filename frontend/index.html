@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerSaver ⚡ | Energy Monitoring & Tariff Intelligence</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="p-3 sm:p-6 lg:p-8 min-h-screen flex items-center justify-center">
+
+    <!-- Outer Application Enclosure (Matches Dribbble frame) -->
+    <div class="app-enclosure w-full max-w-[1440px] flex overflow-hidden border border-slate-100/80">
+
+        <!-- Energetic Top Flow Line Animation (Simulates live power telemetry flow) -->
+        <div class="energy-telemetry-bar"></div>
+
+        <!-- ============================================== -->
+        <!-- 1. LEFT SIDEBAR NAVIGATION                     -->
+        <!-- ============================================== -->
+        <aside class="w-64 bg-white border-r border-slate-100 flex flex-col justify-between p-6 shrink-0 hidden md:flex">
+            <div>
+                <!-- Brand Logo (Vector Energy Icon) -->
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
+                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-lg tracking-tight text-slate-900 block leading-tight">PowerSaver</span>
+                        <span class="text-[10px] font-bold text-blue-600 tracking-wider uppercase">Team 7 • SaaS</span>
+                    </div>
+                </div>
+
+                <!-- Main Navigation Links with Lucide Vector Icons -->
+                <nav class="space-y-1.5">
+                    <button data-tab-target="dashboard" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all nav-item-active">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </button>
+
+                    <button data-tab-target="readings" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="clipboard-pen-line" class="w-4 h-4 text-slate-400"></i>
+                            <span>Meter Readings</span>
+                        </div>
+                    </button>
+
+                    <button data-tab-target="tariffs" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="calculator" class="w-4 h-4 text-slate-400"></i>
+                            <span>Slab Tariff Engine</span>
+                        </div>
+                    </button>
+
+                    <button data-tab-target="appliances" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="plug-zap" class="w-4 h-4 text-slate-400"></i>
+                            <span>Appliances</span>
+                        </div>
+                    </button>
+
+                    <button data-tab-target="forecast" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-slate-400"></i>
+                            <span>AI Forecast</span>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold uppercase tracking-wider">AI</span>
+                    </button>
+                </nav>
+
+                <!-- Section Divider -->
+                <div class="mt-8 mb-3">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">System Actions</span>
+                </div>
+
+                <div class="space-y-1">
+                    <button data-open-modal="modal-log-reading" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i>
+                        <span>Log Meter Reading</span>
+                    </button>
+                    <a id="btn-export-csv" href="#" target="_blank" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+                        <span>Export CSV Log</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer Credit -->
+            <div class="pt-6 border-t border-slate-100 text-[11px] text-slate-400">
+                <div class="flex items-center gap-1.5 font-bold text-slate-700 mb-0.5">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <span>PowerSaver Platform</span>
+                </div>
+                <p class="text-[10px] leading-relaxed">Engineered with 20y full-stack craftsmanship for NxtWave Challenge.</p>
+            </div>
+        </aside>
+
+        <!-- ============================================== -->
+        <!-- 2. MAIN WORKSPACE                              -->
+        <!-- ============================================== -->
+        <div class="flex-1 flex flex-col min-w-0 bg-[#fafbfe]">
+
+            <!-- Top Header Bar (Matches Dribbble top area) -->
+            <header class="px-6 sm:px-8 py-5 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Energy & Bill Overview</h1>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5 flex items-center gap-1.5" id="header-timestamp">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span>12:15 PM at 19th November 2026 • Live Telemetry</span>
+                    </p>
+                </div>
+
+                <!-- Right Header Actions (Search, Property Filter, Currency, Profile) -->
+                <div class="flex items-center gap-3">
+                    <!-- Search Input Pill -->
+                    <div class="relative hidden sm:block">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3"></i>
+                        <input type="text" placeholder="Search readings..." class="bg-slate-100/80 border border-slate-200/60 rounded-full pl-9 pr-4 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-44">
+                    </div>
+
+                    <!-- Property Dropdown Pill -->
+                    <div class="relative flex items-center">
+                        <i data-lucide="building" class="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none"></i>
+                        <select id="property-selector" class="bg-slate-100 border border-slate-200 text-xs font-semibold rounded-full pl-8 pr-7 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 absolute right-3 pointer-events-none"></i>
+                    </div>
+
+                    <!-- Alert Bell Icon -->
+                    <button class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors relative">
+                        <i data-lucide="bell" class="w-4 h-4 text-slate-600"></i>
+                        <span class="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2 ring-2 ring-white"></span>
+                    </button>
+
+                    <!-- Flag / Currency Pill -->
+                    <div class="h-9 px-3 rounded-full bg-slate-100 border border-slate-200 flex items-center gap-1.5 text-xs shadow-xs font-bold text-slate-700" title="Indian DISCOM Rupees">
+                        <span>🇮🇳</span>
+                        <span class="font-mono">INR</span>
+                    </div>
+
+                    <!-- User Profile Avatar -->
+                    <div class="w-9 h-9 rounded-full ring-2 ring-blue-500/20 bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                        YP
+                    </div>
+                </div>
+            </header>
+
+            <!-- Creative Interactive User Journey Flow Stepper -->
+            <div class="px-6 sm:px-8 pt-4 pb-1 bg-white/70 border-b border-slate-100 overflow-x-auto">
+                <div class="flex items-center gap-2 min-w-max pb-3 text-xs">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">User Flow:</span>
+                    <button data-stepper-target="dashboard" class="flow-step-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-500 bg-blue-50/70 text-blue-700 font-semibold shadow-xs">
+                        <span>1. Telemetry Overview</span>
+                    </button>
+                    <span class="text-slate-300">→</span>
+                    <button data-stepper-target="readings" class="flow-step-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:text-slate-900 font-medium">
+                        <span>2. Log Meter Delta</span>
+                    </button>
+                    <span class="text-slate-300">→</span>
+                    <button data-stepper-target="tariffs" class="flow-step-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:text-slate-900 font-medium">
+                        <span>3. Simulate Slabs</span>
+                    </button>
+                    <span class="text-slate-300">→</span>
+                    <button data-stepper-target="appliances" class="flow-step-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:text-slate-900 font-medium">
+                        <span>4. Audit Appliances</span>
+                    </button>
+                    <span class="text-slate-300">→</span>
+                    <button data-stepper-target="forecast" class="flow-step-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:text-slate-900 font-medium">
+                        <i data-lucide="sparkles" class="w-3 h-3 text-amber-500"></i>
+                        <span>5. AI Spikes & Forecast</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <main class="p-6 sm:p-8 flex-1 overflow-y-auto">
+
+                <!-- ============================================== -->
+                <!-- VIEW 1: DASHBOARD (Matches Dribbble 3-col grid) -->
+                <!-- ============================================== -->
+                <div id="tab-dashboard" class="tab-content active space-y-6">
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+                        <!-- Left & Center Columns: Hero Chart & 3 Cards & Table (2 cols) -->
+                        <div class="xl:col-span-2 space-y-6">
+
+                            <!-- Hero Chart: Consumption History -->
+                            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs hover-lift">
+                                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <i data-lucide="trending-up" class="w-4 h-4 text-blue-600"></i>
+                                            <h3 class="font-bold text-sm text-slate-900">Consumption History</h3>
+                                        </div>
+                                        <div class="flex items-center gap-4 mt-1">
+                                            <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-fuchsia-500 inline-block"></span> Baseline Target
+                                            </span>
+                                            <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span> Metered Units
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Switcher Pills (Daily / Monthly / Yearly) -->
+                                    <div class="bg-slate-100 p-1 rounded-full flex items-center text-xs font-semibold text-slate-600">
+                                        <button class="px-3 py-1 rounded-full bg-slate-900 text-white shadow-xs">Daily</button>
+                                        <button class="px-3 py-1 rounded-full hover:text-slate-900">Monthly</button>
+                                        <button class="px-3 py-1 rounded-full hover:text-slate-900">Yearly</button>
+                                    </div>
+                                </div>
+
+                                <!-- Dual Line Spline Canvas -->
+                                <div class="h-64 w-full relative">
+                                    <canvas id="chart-hero-consumption"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 3 Metric Arrow Cards -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <!-- Card 1: Estimated Bill with Rolling Counter -->
+                                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between hover-lift">
+                                    <div class="flex items-center gap-3.5">
+                                        <div class="w-10 h-10 rounded-full icon-circle-up flex items-center justify-center font-bold">
+                                            <i data-lucide="arrow-up-right" class="w-5 h-5 text-emerald-600"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-base font-extrabold text-slate-900 font-mono block" id="kpi-est-bill">₹--</span>
+                                            <span class="text-[11px] text-slate-400 font-medium">Estimated Bill</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md" id="kpi-wow-pct">+16.24%</span>
+                                </div>
+
+                                <!-- Card 2: Units Billed with Rolling Counter -->
+                                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between hover-lift">
+                                    <div class="flex items-center gap-3.5">
+                                        <div class="w-10 h-10 rounded-full icon-circle-down flex items-center justify-center font-bold">
+                                            <i data-lucide="arrow-down-right" class="w-5 h-5 text-rose-600"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-base font-extrabold text-slate-900 font-mono block" id="kpi-units-val">-- kWh</span>
+                                            <span class="text-[11px] text-slate-400 font-medium">Month-to-Date</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">-10.78%</span>
+                                </div>
+
+                                <!-- Card 3: Active Anomalies -->
+                                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between hover-lift">
+                                    <div class="flex items-center gap-3.5">
+                                        <div class="w-10 h-10 rounded-full icon-circle-up flex items-center justify-center font-bold">
+                                            <i data-lucide="zap" class="w-5 h-5 text-emerald-600"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-base font-extrabold text-slate-900 font-mono block" id="kpi-spikes-val">0 Spikes</span>
+                                            <span class="text-[11px] text-slate-400 font-medium">Surges Flagged</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">+20.90%</span>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Table: Referrer History Style -->
+                            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-4 hover-lift">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="history" class="w-4 h-4 text-blue-600"></i>
+                                        <h3 class="font-bold text-sm text-slate-900">Recent Reading History</h3>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full cursor-pointer flex items-center gap-1">
+                                            <span>This Month</span>
+                                            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+                                        </span>
+                                        <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 cursor-pointer"></i>
+                                    </div>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                                <th class="py-2.5 px-3">Date</th>
+                                                <th class="py-2.5 px-3">Cumulative Meter</th>
+                                                <th class="py-2.5 px-3">Daily Units</th>
+                                                <th class="py-2.5 px-3">Status</th>
+                                                <th class="py-2.5 px-3 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dash-table-body" class="divide-y divide-slate-50">
+                                            <!-- Populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: 3 Dribbble Widgets (1 col) -->
+                        <div class="space-y-6">
+
+                            <!-- Widget 1: Radial Gauge Target -->
+                            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs flex flex-col items-center justify-between relative hover-lift">
+                                <div class="flex items-center justify-between w-full mb-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <i data-lucide="target" class="w-4 h-4 text-blue-600"></i>
+                                        <h4 class="font-bold text-sm text-slate-900">Slab 3 Limit Target</h4>
+                                    </div>
+                                    <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 cursor-pointer"></i>
+                                </div>
+
+                                <!-- Radial Donut with Centered % -->
+                                <div class="relative w-44 h-44 flex items-center justify-center my-2">
+                                    <canvas id="chart-slab-gauge"></canvas>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span id="gauge-pct-text" class="text-3xl font-extrabold text-slate-900 font-mono">70%</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Reached</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-center w-full pt-2 border-t border-slate-50">
+                                    <span id="gauge-sub-text" class="text-base font-extrabold text-slate-900 font-mono block">280 / 400 kWh</span>
+                                    <span class="text-[11px] text-slate-400">120 units before ₹9.00/unit rate jump</span>
+                                </div>
+                            </div>
+
+                            <!-- Widget 2: Weekly Summary Dark Capsule Card -->
+                            <div class="bg-[#0f172a] text-white p-6 rounded-3xl shadow-md space-y-4 hover-lift">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
+                                        <h4 class="font-bold text-sm">Weekly Summary</h4>
+                                    </div>
+                                    <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-500 cursor-pointer"></i>
+                                </div>
+
+                                <!-- 7 Capsule Bars -->
+                                <div id="weekly-capsules-container" class="flex items-end justify-between pt-2 px-1">
+                                    <!-- Populated dynamically (Mo, Tue, Wed, Thu, Fri, Sat, Sun) -->
+                                </div>
+                            </div>
+
+                            <!-- Widget 3: Heavy Appliances List -->
+                            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-3 hover-lift">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <i data-lucide="cpu" class="w-4 h-4 text-blue-600"></i>
+                                        <h4 class="font-bold text-sm text-slate-900">Heavy Appliances</h4>
+                                    </div>
+                                    <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 cursor-pointer"></i>
+                                </div>
+
+                                <div id="high-load-appliances-list" class="space-y-1">
+                                    <!-- Populated dynamically with Vector SVG category badges -->
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ============================================== -->
+                <!-- VIEW 2: METER READINGS LOG                     -->
+                <!-- ============================================== -->
+                <div id="tab-readings" class="tab-content space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                                    <i data-lucide="clipboard-list" class="w-5 h-5 text-blue-600"></i>
+                                    <span>Complete Meter Reading History</span>
+                                </h3>
+                                <p class="text-xs text-slate-400">Ground-truth recorded values with automated delta calculation and rollback checks.</p>
+                            </div>
+                            <button data-open-modal="modal-log-reading" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Log New Reading</span>
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                        <th class="py-3 px-4">Reading Date</th>
+                                        <th class="py-3 px-4">Cumulative Reading</th>
+                                        <th class="py-3 px-4">Daily Delta</th>
+                                        <th class="py-3 px-4">Interval</th>
+                                        <th class="py-3 px-4">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="readings-table-body" class="divide-y divide-slate-50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================== -->
+                <!-- VIEW 3: INDIAN SLAB TARIFF ENGINE              -->
+                <!-- ============================================== -->
+                <div id="tab-tariffs" class="tab-content space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Interactive Simulator Slider -->
+                        <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-5">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i>
+                                        <h3 class="font-bold text-sm text-slate-900">Interactive Consumption Simulator</h3>
+                                    </div>
+                                    <p class="text-xs text-slate-400">Slide to test bills across graduated telescopic slabs, fixed charges, and duty.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span id="slab-milestone-pill" class="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">⚡ Slab 2 Active (₹5.50/unit)</span>
+                                    <input type="number" id="sim-units-input" value="280" min="0" max="1500" class="w-24 px-3 py-1.5 font-mono text-sm font-bold text-blue-600 bg-slate-50 border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-blue-500">
+                                    <span class="text-xs font-semibold text-slate-500">kWh</span>
+                                </div>
+                            </div>
+
+                            <input type="range" id="sim-units-slider" min="0" max="1000" value="280" step="5" class="w-full h-2.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 slider-glow">
+
+                            <!-- Slabs breakdown -->
+                            <div class="space-y-3 pt-3 border-t border-slate-50">
+                                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
+                                    <span>Graduated Slab Breakdown</span>
+                                </span>
+                                <div id="sim-slab-breakdown" class="space-y-1">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Summary 4 Cards -->
+                            <div class="grid grid-cols-4 gap-3 pt-4 border-t border-slate-50 text-center">
+                                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Energy Charges</span>
+                                    <span id="sim-energy-charges" class="font-mono font-bold text-slate-800 text-sm">₹--</span>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Fixed Charges</span>
+                                    <span id="sim-fixed-charges" class="font-mono font-bold text-slate-800 text-sm">₹--</span>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Tax (9%)</span>
+                                    <span id="sim-duty-tax" class="font-mono font-bold text-slate-800 text-sm">₹--</span>
+                                </div>
+                                <div class="p-3 bg-blue-50 rounded-2xl border border-blue-100">
+                                    <span class="text-[10px] text-blue-600 font-bold uppercase block">Total Bill</span>
+                                    <span id="sim-total-bill" class="font-mono font-extrabold text-blue-700 text-base">₹--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configured Rules Card -->
+                        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-4">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="file-cog" class="w-4 h-4 text-blue-600"></i>
+                                <h3 class="font-bold text-sm text-slate-900">Current Tariff Rules</h3>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase">DISCOM Plan</label>
+                                    <input type="text" id="tariff-discom-name" readonly class="w-full text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 mt-1">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-400 uppercase">Fixed / kW</label>
+                                        <input type="text" id="tariff-fixed-charge" readonly class="w-full text-xs font-mono text-slate-800 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-400 uppercase">Tax %</label>
+                                        <input type="text" id="tariff-tax-pct" readonly class="w-full text-xs font-mono text-slate-800 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 mt-1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase block mb-2">Telescopic Slabs</label>
+                                <div id="slabs-list-container" class="space-y-2">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================== -->
+                <!-- VIEW 4: APPLIANCE INVENTORY & RECONCILIATION   -->
+                <!-- ============================================== -->
+                <div id="tab-appliances" class="tab-content space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Appliance List (2 cols) -->
+                        <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="plug" class="w-4 h-4 text-blue-600"></i>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Appliance Inventory</span>
+                                </div>
+                                <div class="text-xs text-slate-400 flex gap-4 font-mono">
+                                    <span>Daily: <strong id="app-total-daily" class="text-slate-800">--</strong></span>
+                                    <span>Monthly: <strong id="app-total-monthly" class="text-blue-600">--</strong></span>
+                                </div>
+                            </div>
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase">
+                                        <th class="py-2.5 px-4">Appliance</th>
+                                        <th class="py-2.5 px-4">Wattage</th>
+                                        <th class="py-2.5 px-4">Usage</th>
+                                        <th class="py-2.5 px-4">Monthly Estimate</th>
+                                        <th class="py-2.5 px-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appliances-table-body" class="divide-y divide-slate-50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Donut Breakdown (1 col) -->
+                        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs flex flex-col items-center">
+                            <div class="flex items-center gap-1.5 w-full mb-3">
+                                <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+                                <h3 class="font-bold text-sm text-slate-900">Usage by Category</h3>
+                            </div>
+                            <div class="h-56 w-full relative">
+                                <canvas id="chart-appliance-donut"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Safety & Ethics Reconciliation Card -->
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="scale" class="w-4 h-4 text-blue-600"></i>
+                                <h3 class="font-bold text-sm text-slate-900">Measured vs. Estimated Reconciliation Report</h3>
+                            </div>
+                            <span class="text-[10px] px-2.5 py-1 bg-blue-50 text-blue-700 font-bold rounded-full flex items-center gap-1">
+                                <i data-lucide="shield-alert" class="w-3 h-3 text-blue-600"></i>
+                                <span>Safety & Ethics Audit</span>
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase block">Measured Meter Data</span>
+                                <span id="recon-measured-kwh" class="font-mono text-base font-extrabold text-slate-900">-- kWh</span>
+                                <span class="text-[10px] text-emerald-600 block font-semibold mt-0.5">Ground Truth</span>
+                            </div>
+                            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase block">Appliance Summation</span>
+                                <span id="recon-estimated-kwh" class="font-mono text-base font-extrabold text-slate-900">-- kWh</span>
+                                <span class="text-[10px] text-blue-600 block font-semibold mt-0.5">Bottom-Up Estimate</span>
+                            </div>
+                            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase block">Unaccounted Delta</span>
+                                <span id="recon-diff-kwh" class="font-mono text-base font-extrabold text-amber-600">-- kWh</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">Phantom Base Load</span>
+                            </div>
+                        </div>
+                        <p id="recon-diagnosis-text" class="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <!-- ============================================== -->
+                <!-- VIEW 5: AI FORECAST & ANOMALIES                -->
+                <!-- ============================================== -->
+                <div id="tab-forecast" class="tab-content space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Optimistic -->
+                        <div class="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-100 shadow-xs hover-lift">
+                            <div class="flex items-center gap-1.5 text-emerald-800">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">Optimistic (Low)</span>
+                            </div>
+                            <div id="fore-opt-bill" class="text-2xl font-extrabold text-emerald-950 font-mono mt-1">₹--</div>
+                            <span id="fore-opt-kwh" class="text-xs font-mono text-emerald-700 font-semibold block mt-0.5">-- kWh</span>
+                        </div>
+                        <!-- Expected -->
+                        <div class="p-5 rounded-3xl bg-blue-50/70 border-2 border-blue-500 shadow-sm hover-lift">
+                            <div class="flex items-center gap-1.5 text-blue-800">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">Expected (Baseline)</span>
+                            </div>
+                            <div id="fore-exp-bill" class="text-3xl font-extrabold text-blue-950 font-mono mt-1">₹--</div>
+                            <span id="fore-exp-kwh" class="text-xs font-mono text-blue-700 font-bold block mt-0.5">-- kWh</span>
+                        </div>
+                        <!-- Pessimistic -->
+                        <div class="p-5 rounded-3xl bg-rose-50/70 border border-rose-100 shadow-xs hover-lift">
+                            <div class="flex items-center gap-1.5 text-rose-800">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">Pessimistic (High)</span>
+                            </div>
+                            <div id="fore-pes-bill" class="text-2xl font-extrabold text-rose-950 font-mono mt-1">₹--</div>
+                            <span id="fore-pes-kwh" class="text-xs font-mono text-rose-700 font-semibold block mt-0.5">-- kWh</span>
+                        </div>
+                    </div>
+
+                    <!-- Influential Spikes Table -->
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-rose-600"></i>
+                            <h3 class="font-bold text-sm text-slate-900">Explainability: Which Readings Influenced the Forecast?</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase">
+                                        <th class="py-2.5 px-3">Date</th>
+                                        <th class="py-2.5 px-3">Spike Reading</th>
+                                        <th class="py-2.5 px-3">Baseline Normal</th>
+                                        <th class="py-2.5 px-3">Bill Impact</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="influential-spikes-body" class="divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Evidence Based Recommendations -->
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-xs space-y-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i>
+                            <h3 class="font-bold text-sm text-slate-900">Evidence-Based Saving Suggestions</h3>
+                        </div>
+                        <div id="recommendations-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL: LOG METER READING                       -->
+    <!-- ============================================== -->
+    <div id="modal-log-reading" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 modal-animate">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="clipboard-pen" class="w-5 h-5 text-blue-600"></i>
+                    <h3 class="font-bold text-base text-slate-900">Record Meter Reading</h3>
+                </div>
+                <button data-close-modal="modal-log-reading" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+            </div>
+
+            <form id="form-log-reading" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">Reading Date</label>
+                    <input type="date" id="input-reading-date" required class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">Cumulative Reading (kWh)</label>
+                    <input type="number" step="0.1" id="input-cum-kwh" required placeholder="e.g. 1750.5" class="w-full text-sm font-mono font-bold text-blue-600 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500">
+                    <p id="reading-helper-text" class="text-[11px] text-slate-400 mt-1"></p>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">Notes / Circumstance (Optional)</label>
+                    <input type="text" id="input-reading-notes" placeholder="e.g. High AC usage during heatwave" class="w-full text-xs border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" data-close-modal="modal-log-reading" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs">Save Reading</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>

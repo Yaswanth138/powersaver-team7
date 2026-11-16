@@ -1,0 +1,191 @@
+/* PowerSaver - Premium Dribbble-Inspired Design System ("Dashcom" / Modern SaaS Style) */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg-canvas: #f0f3f8;
+    --card-surface: #ffffff;
+    --primary: #3754db;
+    --primary-light: #eef2ff;
+    --primary-gradient: linear-gradient(135deg, #3b5bfd 0%, #2547eb 100%);
+    --accent-cyan: #06b6d4;
+    --accent-pink: #d946ef;
+    --accent-emerald: #10b981;
+    --dark-widget: #0f172a;
+    --text-primary: #1e293b;
+    --text-muted: #64748b;
+    --border-subtle: #f1f5f9;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Outer Application Enclosure (Matches Dribbble frame) */
+.app-enclosure {
+    background: #ffffff;
+    border-radius: 28px;
+    box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Energetic Top Flow Line Animation (Simulates live power telemetry flow) */
+.energy-telemetry-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3b82f6, #06b6d4, #d946ef, transparent);
+    background-size: 200% 100%;
+    animation: energyFlow 2.8s linear infinite;
+    z-index: 50;
+    opacity: 0.9;
+}
+
+@keyframes energyFlow {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Sidebar Active Menu Pill */
+.nav-item-active {
+    background: #3754db !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 20px -5px rgba(55, 84, 219, 0.4);
+    transform: translateX(4px);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-item-active svg, .nav-item-active span {
+    color: #ffffff !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+/* Capsule Bars in Dark Widget */
+.capsule-track {
+    background: #1e293b;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+    width: 14px;
+    height: 70px;
+    display: flex;
+    align-items: flex-end;
+    transition: transform 0.2s ease;
+}
+
+.capsule-track:hover {
+    transform: scaleY(1.08);
+}
+
+.capsule-fill {
+    background: linear-gradient(180deg, #38bdf8 0%, #2563eb 100%);
+    border-radius: 9999px;
+    width: 100%;
+    transition: height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dynamic Interactive User Flow Stepper Pill */
+.flow-step-pill {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+.flow-step-pill:hover {
+    transform: translateY(-1px);
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+/* Subtle Hover Lift & Sheen */
+.hover-lift {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px -10px rgba(0, 0, 0, 0.08);
+}
+
+/* Creative Tab Transition with Spring Motion */
+@keyframes tabSlideFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.995);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+    animation: tabSlideFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Modal Smooth Spring In */
+@keyframes modalPop {
+    0% {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-animate {
+    animation: modalPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Live Tariff Slider Glow Feedback */
+.slider-glow {
+    transition: box-shadow 0.3s ease;
+}
+.slider-glow:focus {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+}
+
+/* Badge Pulse */
+@keyframes alertPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+    70% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.animate-alert-pulse {
+    animation: alertPulse 2s infinite;
+}
