@@ -16,11 +16,15 @@ const state = {
     activeTab: 'dashboard'
 };
 
+// --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initModals();
     initForms();
     await loadProperties();
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 });
 
 // --- Tab Management ---
@@ -56,7 +60,12 @@ export function switchTab(tabId) {
     if (tabId === 'tariffs') loadTariffTab();
     if (tabId === 'appliances') loadAppliancesTab();
     if (tabId === 'forecast') loadForecastTab();
+
+    setTimeout(() => {
+        if (window.lucide) window.lucide.createIcons();
+    }, 50);
 }
+
 
 // --- Data Loaders ---
 async function loadProperties() {
@@ -153,9 +162,12 @@ async function loadDashboard() {
         // 6. Render Bottom Table (Referrer History Style)
         renderReferrerStyleTable(trends.daily.slice(-6).reverse(), state.anomalies);
 
+        if (window.lucide) window.lucide.createIcons();
+
     } catch (err) {
         console.error('Error loading dashboard:', err);
     }
+
 }
 
 function renderHighLoadAppliances(appliancesList) {
@@ -171,12 +183,12 @@ function renderHighLoadAppliances(appliancesList) {
     }
 
     const icons = {
-        cooling: { emoji: '❄️', bg: 'bg-blue-100' },
-        heating: { emoji: '♨️', bg: 'bg-rose-100' },
-        refrigeration: { emoji: '🧊', bg: 'bg-emerald-100' },
-        ventilation: { emoji: '🌀', bg: 'bg-amber-100' },
-        lighting: { emoji: '💡', bg: 'bg-purple-100' },
-        general: { emoji: '⚡', bg: 'bg-slate-100' }
+        cooling: { icon: 'snowflake', bg: 'bg-blue-50 text-blue-600' },
+        heating: { icon: 'flame', bg: 'bg-rose-50 text-rose-600' },
+        refrigeration: { icon: 'archive', bg: 'bg-emerald-50 text-emerald-600' },
+        ventilation: { icon: 'fan', bg: 'bg-amber-50 text-amber-600' },
+        lighting: { icon: 'lightbulb', bg: 'bg-purple-50 text-purple-600' },
+        general: { icon: 'zap', bg: 'bg-slate-100 text-slate-600' }
     };
 
     topApps.forEach(app => {
@@ -185,8 +197,8 @@ function renderHighLoadAppliances(appliancesList) {
         row.className = 'flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0';
         row.innerHTML = `
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center text-sm">
-                    ${meta.emoji}
+                <div class="w-8 h-8 rounded-full ${meta.bg} flex items-center justify-center">
+                    <i data-lucide="${meta.icon}" class="w-4 h-4"></i>
                 </div>
                 <div>
                     <h5 class="text-xs font-bold text-slate-800 truncate max-w-[110px]">${app.name}</h5>
@@ -200,7 +212,10 @@ function renderHighLoadAppliances(appliancesList) {
         `;
         container.appendChild(row);
     });
+
+    if (window.lucide) window.lucide.createIcons();
 }
+
 
 function renderReferrerStyleTable(recentReadings, anomalies) {
     const tbody = document.getElementById('dash-table-body');
