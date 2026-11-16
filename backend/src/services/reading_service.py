@@ -144,3 +144,78 @@ def list_readings(meter_id: str, limit: int = 100):
             )
             for r in rows
         ]
+
+
+def compare_historical_usage(meter_id: str) -> dict:
+    """
+    Compares the current month's usage against the previous month,
+    and the last 7 days against the preceding 7 days.
+    Fulfills: 'Comparison with the same property's historical usage'.
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+
+        # Monthly aggregation
+        cursor.execute("""
+            SELECT 
+                SUBSTR(reading_date, 1, 7) as month,
+                ROUND(SUM(daily_consumption_kwh), 2) as total_kwh,
+                COUNT(*) as days_recorded
+            FROM readings
+            WHERE meter_id = ?
+            GROUP BY SUBSTR(reading_date, 1, 7)
+            ORDER BY month DESC
+            LIMIT 2
+        """, (meter_id,))
+        month_rows = cursor.fetchall()
+
+        # Daily records for weekly comparison
+        cursor.execute("""
+            SELECT reading_date, daily_consumption_kwh 
+            FROM readings 
+            WHERE meter_id = ? AND daily_consumption_kwh > 0
+            ORDER BY reading_date DESC 
+            LIMIT 14
+        """, (meter_id,))
+        daily_rows = cursor.fetchall()
+
+    # 1. Month-over-Month
+    mom = {
+        "current_month": None,
+        "previous_month": None,
+        "difference_kwh": 0.0,
+        "percentage_change": 0.0,
+        "trend": "STABLE"
+    }
+    if len(month_rows) >= 1:
+        mom["current_month"] = dict(month_rows[0])
+    if len(month_rows) >= 2:
+        mom["previous_month"] = dict(month_rows[1])
+        curr_kwh = mom["current_month"]["total_kwh"]
+        prev_kwh = mom["previous_month"]["total_kwh"]
+        diff = round(curr_kwh - prev_kwh, 2)
+        pct = round((diff / prev_kwh) * 100.0, 1) if prev_kwh > 0 else 0.0
+        mom["difference_kwh"] = diff
+        mom["percentage_change"] = pct
+        mom["trend"] = "UP" if diff > 0 else ("DOWN" if diff < 0 else "STABLE")
+
+    # 2. Week-over-Week (Last 7 days vs Previous 7 days)
+    recent_7 = sum(r["daily_consumption_kwh"] for r in daily_rows[:7])
+    prior_7 = sum(r["daily_consumption_kwh"] for r in daily_rows[7:14])
+    wow_diff = round(recent_7 - prior_7, 2)
+    wow_pct = round((wow_diff / prior_7) * 100.0, 1) if prior_7 > 0 else 0.0
+
+    wow = {
+        "recent_7_days_kwh": round(recent_7, 2),
+        "prior_7_days_kwh": round(prior_7, 2),
+        "difference_kwh": wow_diff,
+        "percentage_change": wow_pct,
+        "trend": "UP" if wow_diff > 0 else ("DOWN" if wow_diff < 0 else "STABLE")
+    }
+
+    return {
+        "meter_id": meter_id,
+        "month_over_month": mom,
+        "week_over_week": wow
+    }
+

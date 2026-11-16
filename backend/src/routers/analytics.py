@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Query, HTTPException
 from ..models import ForecastResponse, AnomalyItem
 from ..services.anomaly_service import forecast_monthly_bill, detect_anomalies
+from ..services.appliance_service import reconcile_meter_with_appliances
 from ..database import get_db
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics & Forecasting"])
@@ -10,6 +11,16 @@ router = APIRouter(prefix="/api/analytics", tags=["Analytics & Forecasting"])
 @router.get("/forecast", response_model=ForecastResponse)
 def get_bill_forecast(property_id: str = Query(...), meter_id: str = Query(...)):
     return forecast_monthly_bill(property_id, meter_id)
+
+
+@router.get("/reconciliation")
+def get_reconciliation(property_id: str = Query(...), meter_id: str = Query(...)):
+    """
+    Reconciliation between top-down measured meter readings and bottom-up appliance estimates.
+    Fulfills Safety, Ethics & Limitations prompt criteria.
+    """
+    return reconcile_meter_with_appliances(property_id, meter_id)
+
 
 
 @router.get("/anomalies", response_model=List[AnomalyItem])
